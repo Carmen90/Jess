@@ -1,4 +1,11 @@
 ;Grupo 10. Carmen Acosta Morales y Sheila Plaza Estévez
+
+(defglobal ?*pantGrande* = 4.0)
+(defglobal ?*pantMediana* = 3.0)
+(defglobal ?*pantPeque* = 2.0)
+(defglobal ?*cont* = 0)
+(defglobal ?*cantidadMostrar* = 5)
+
 ;Características de un terminal
 (deftemplate terminales
     (slot marca (type STRING))
@@ -26,8 +33,9 @@
     (slot correo (allowed-values true false)(default false))
     (slot comunicacion (allowed-values true false)(default false))
     (slot fotos (allowed-values true false)(default false))
-    (slot preferenciaMarca (type STRING))
+   ; (slot preferenciaMarca (type STRING))
     )
+
 ;Lista de terminales posibles
 (deffacts terminalesPosibles
     (terminales (marca "LG")(modelo "Optimus L1 II")(pantalla 3)(memoria 4)(camara 2)(precio 79)(gama basica)(microSD false)(3G true)(Wifi true))
@@ -60,25 +68,11 @@
     (terminales (marca "Sony" )( modelo "Xperia T")(pantalla 4.55)(memoria 16)(camara 13)(precio 245.00)(gama alta)(microSD true)(3G true)(Wifi true))
     )
 
-;Distintos usuarios
-(deffacts distintosUsuarios
-    ;(usuario (nombre "María")(edad 21)(ocupacion estudiante)(presupuesto 250)(leer true)(grabar true)(fotos true)(comunicacion true) (preferenciaMarca "LG"))
-    ;(usuario (nombre "Juan")(edad 24)(ocupacion trabajador)(presupuesto 250)(leer true)(redes true)(fotos true)(comunicacion true)(preferenciaMarca "Kazam"))
-    ;(usuario (nombre "Isabel")(edad 20)(ocupacion estudiante)(presupuesto 100)(redes true)(correo true)(comunicacion true)(preferenciaMarca "Hisense"))
-    ;(usuario (nombre "Ana")(edad 50)(ocupacion trabajador)(presupuesto 400)(jugar true)(videos true)(fotos true)(grabar true)( comunicacion true) (redes true)(preferenciaMarca "Google"))
-    ;(usuario (nombre "Luis")(edad 35)(ocupacion paro)(presupuesto 200)(leer true)(fotos true)(comunicacion true)(preferenciaMarca "Kazam"))
-    (usuario (nombre "Eustaquio")(edad 43)(ocupacion trabajador)(presupuesto 350)(leer true)(grabar true)(fotos true)(videos true)(jugar true)(preferenciaMarca "BQ"))
-    (usuario (nombre "Carmen")(edad 32)(ocupacion paro)(presupuesto 150)(leer true)(grabar true)(videos true)(comunicacion true)(redes true)(preferenciaMarca "Samsung"))
-    (usuario (nombre "Claudia")(edad 28)(ocupacion estudiante)(presupuesto 300)(leer true)(videos true)(fotos true)(comunicacion true)(correo true)(redes true)(preferenciaMarca "Motorola"))
-    (usuario (nombre "Naiara")(edad 24)(ocupacion trabajador)(presupuesto 460)(redes true)(jugar true)(fotos true)(comunicacion true)(videos true)(preferenciaMarca "LG"))
-    (usuario (nombre "Izan")(edad 30)(ocupacion paro)(presupuesto 150)(leer true)(comunicacion true)(correo true)(preferenciaMarca "Samsung"))
-    )
-
 (defmodule necesidades)
 
 (deftemplate necesidadesUsuario
     (slot nombre (type STRING))
-    (slot marca (type STRING))
+   ; (slot marca (type STRING))
     (slot pantalla (allowed-values grande mediana pequeña)(default pequeña))
     (slot camara (type FLOAT) (default 2))
     (slot precio (type FLOAT))
@@ -91,51 +85,47 @@
 ;////// NECESIDADES DIRECTAS
 ;Necesidades de precio, marca 
 (defrule directas
-    (MAIN::usuario (nombre ?nom)(presupuesto ?p)(preferenciaMarca ?m))
+    (MAIN::usuario (nombre ?nom)(presupuesto ?p))
     =>
-    (assert (necesidadesUsuario (nombre ?nom)(precio ?p)(marca ?m)))
+    (assert (necesidadesUsuario (nombre ?nom)(precio ?p)))
     )
 
 ;///NECESIDADES INDIRECTAS (intereses del usuario)
 ;Necesidades de juegos y videos
 (defrule necJuegosVideos
     (MAIN::usuario (nombre ?nom)(jugar ?j)(videos ?v))
-    ?ns <-(necesidades::necesidadesUsuario (camara ?ca)(gama ?ga)(marca ?ma)(microSD ?ms)(nombre ?nom)(pantalla ?pa)(precio ?p))
+    ?ns <-(necesidades::necesidadesUsuario (camara ?ca)(gama ?ga)(microSD ?ms)(nombre ?nom)(pantalla ?pa)(precio ?p))
     (test (or(eq ?j true)(eq ?v true)))
     =>
     (modify ?ns (microSD true)(pantalla grande))
-    (assert ?ns)
     )
 
 
 ;Necesidades de lectura
 (defrule necLectura
-    (MAIN::usuario (nombre ?nom)(leer ?l))
-    ?nu <-(necesidades::necesidadesUsuario (camara ?c)(gama ?g)(marca ?m)(microSD ?msd)(nombre ?nom)(pantalla ?p)(precio ?pr))
-    (test (eq ?l true))
+    (MAIN::usuario (nombre ?nom)(leer true))
+    ?nu <-(necesidades::necesidadesUsuario (camara ?c)(gama ?g)(microSD ?msd)(nombre ?nom)(pantalla ?p)(precio ?pr))
     =>
     (modify ?nu (pantalla grande))
-    (assert ?nu)
     )
 
 ;Necesidades de fotos y grabar
 (defrule necFotosGrabar
     (MAIN::usuario (nombre ?nom)(fotos ?fo)(grabar ?gr))
-    ?nu <-(necesidades::necesidadesUsuario(camara ?c)(gama ?g)(marca ?m)(microSD ?msd)(nombre ?nom)(pantalla ?p)(precio ?pr))
+    ?nu <-(necesidades::necesidadesUsuario(camara ?c)(gama ?g)(microSD ?msd)(nombre ?nom)(pantalla ?p)(precio ?pr))
     (test (or(eq ?fo true)(eq ?gr true)))
+    (test ( >= ?c 5))
     =>
-    (modify ?nu (camara 5)(microSD true))
-    (assert ?nu)
+    (modify ?nu (camara ?c)(microSD true))
     )
 
 ;Necesidades redes y correo
 (defrule necRedesCorreo
     (MAIN::usuario (nombre ?nom)(redes ?re)(correo ?co))
-    ?nu <-(necesidades::necesidadesUsuario (camara ?c)(gama ?g)(marca ?m)(microSD ?msd)(nombre ?nom)(pantalla ?p)(precio ?pr))
+    ?nu <-(necesidades::necesidadesUsuario (camara ?c)(gama ?g)(microSD ?msd)(nombre ?nom)(pantalla ?p)(precio ?pr))
     (test (or(eq ?re true)(eq ?co true)))
     =>
     (modify ?nu ( 3G true)(Wifi true))
-    (assert ?nu)
     )
 
 (defmodule sugerencias)
@@ -143,14 +133,15 @@
     (slot nombre ( type STRING))
     (slot marca (type STRING))
     (slot modelo (type STRING))
+    (slot precio (type NUMBER))
     )
 (deffunction tipoPantalla (?pantalla)
     if (eq ?pantalla grande)then
-    	(return 4.0)
+    	(return ?*pantGrande*)
     else if ( eq ?pantalla mediana)then
-    	(return 3.0)
+    	(return ?*pantMediana*)
     else if (eq ?pantalla pequeña)then
-    	(return 2.0)
+    	(return ?*pantPeque*)
     )
 
 (deffunction tipoGama (?gama)
@@ -161,22 +152,57 @@
     else if (eq ?gama basica)then
     	(return 1)
     )
+
 (defrule sugerenciaTelefonos
-    (necesidades::necesidadesUsuario (3G ?3g)(Wifi ?w)(camara ?c)(gama ?g)(marca ?m)(microSD ?msd)(nombre ?n)(pantalla ?p)(precio ?pr))
-    (MAIN::terminales (3G ?3gm)(modelo ?mod)(Wifi ?wm)(camara ?cm)(gama ?gm)(marca ?mm)(microSD ?msdm)(pantalla ?pm)(precio ?prm))
+    (necesidades::necesidadesUsuario (3G ?3g)(Wifi ?w)(camara ?c)(gama ?g)(microSD ?msd)(nombre ?n)(pantalla ?p)(precio ?pr))
+    (MAIN::terminales (3G ?3gm)(modelo ?mod)(Wifi ?wm)(camara ?cm)(gama ?gm)(marca ?m)(microSD ?msdm)(pantalla ?pm)(precio ?prm))
     (test (<= ?prm ?pr))
     (test (>= ?pm (tipoPantalla ?p)))
-    (test (eq ?m ?mm))
     (test (<= (tipoGama ?g) (tipoGama ?gm)))
     (test (or(and(eq ?w true)(eq ?wm true))(eq ?w false)))
     (test (or(and(eq ?3g true)(eq ?3gm true))(eq ?3g false)))
     (test (<= ?c ?cm))
     =>
-    (printout t )
-    (assert (telefonoUsuario (nombre ?n)(marca ?m)(modelo ?mod)))
+    (assert (telefonoUsuario (nombre ?n)(marca ?m)(modelo ?mod)(precio ?prm)))
+    ) 
+
+
+
+(defmodule orden)
+(deftemplate ordenPrecio 
+    (slot nombre ( type STRING))
+    (slot marca (type STRING))
+    (slot modelo (type STRING))
+    (slot precio (type NUMBER))
+    (slot contador (type NUMBER)(default 0))
     )
 
-(reset)
-(focus necesidades sugerencias)
-(run)
-(facts *)
+
+(defrule ordenar
+    ?p <-(MAIN::usuario (nombre ?n))
+    ?r <-(sugerencias::telefonoUsuario (nombre ?n)(marca ?m)(modelo ?mo)(precio ?p1))
+    (not(sugerencias::telefonoUsuario(nombre ?n)(marca ?mar)(modelo ?mod)(precio ?p2&:(< ?p2 ?p1))))
+    => 
+    (assert (ordenPrecio (marca ?m)(modelo ?mo)(nombre ?n)(precio ?p1)(contador ?*cont*)))
+    (retract ?r)
+    (bind ?*cont* (+ ?*cont* 1))
+    )
+
+(defmodule cantidades)
+(deftemplate maxProd 
+    (slot nombre ( type STRING))
+    (slot marca (type STRING))
+    (slot modelo (type STRING))
+    (slot precio (type NUMBER))
+    (slot contador (type NUMBER)(default 0))
+    )
+
+(defrule cantidad
+    (orden::ordenPrecio (marca ?m)(modelo ?mo)(nombre ?n)(precio ?p)(contador ?c))
+    (test (< ?c ?*cantidadMostrar*))
+    =>
+    (assert (maxProd (marca ?m)(nombre ?n)(modelo ?mo)(precio ?p)))
+    )
+
+    
+    
